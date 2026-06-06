@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Web Server — Running</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #050810;
+    --surface: #0c1120;
+    --border: #1a2540;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #00ff88;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 64px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+    letter-spacing: 0.1em;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+    font-weight: 400;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    animation: fadeUp 0.6s ease both;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .card:nth-child(1) { animation-delay: 0.1s; }
+  .card:nth-child(2) { animation-delay: 0.2s; }
+  .card:nth-child(3) { animation-delay: 0.3s; }
+  .card:nth-child(4) { animation-delay: 0.4s; }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .terminal {
+    background: #020408;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: fadeUp 0.6s 0.5s ease both;
+    margin-bottom: 40px;
+  }
+
+  .term-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .term-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .term-dot.r { background: #ff5f56; }
+  .term-dot.y { background: #ffbd2e; }
+  .term-dot.g { background: #27c93f; }
+
+  .term-title {
+    flex: 1;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .term-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 2;
+  }
+
+  .t-green  { color: var(--green); }
+  .t-cyan   { color: var(--accent); }
+  .t-purple { color: #a78bfa; }
+  .t-muted  { color: var(--muted); }
+  .t-white  { color: #fff; }
+
+  .phases {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeUp 0.6s 0.6s ease both;
+    margin-bottom: 40px;
+  }
+
+  .phase {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .phase:hover { border-color: var(--accent2); }
+
+  .phase-num {
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #fff;
+  }
+
+  .phase h4 { font-size: 0.95rem; margin-bottom: 4px; color: #fff; }
+  .phase p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    animation: fadeUp 0.6s 0.7s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge"><span class="dot"></span> SERVER ONLINE</div>
+    <h1>C++ Web Server<br>is Running</h1>
+    <p class="subtitle">Multi-threaded · LRU Cache · Thread Pool · RAII Sockets</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>Thread Pool</h3>
+      <p>Fixed worker threads pre-allocated at startup. Zero spawn overhead per request — tasks are queued and dispatched with mutex + condition_variable.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🗄️</div>
+      <h3>LRU Cache</h3>
+      <p>32MB in-memory Least Recently Used cache for static files. Thread-safe with its own mutex. Cache hits skip disk I/O entirely.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <h3>RAII Sockets</h3>
+      <p>Every client socket is wrapped in a SocketGuard. Zero file descriptor leaks guaranteed — destructor closes the fd automatically.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛡️</div>
+      <h3>Path Traversal Guard</h3>
+      <p>All requested paths are canonicalized and verified to be inside the web root. <code>../../etc/passwd</code> attacks return 403.</p>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <div class="term-bar">
+      <span class="term-dot r"></span>
+      <span class="term-dot y"></span>
+      <span class="term-dot g"></span>
+      <span class="term-title">webserver — bash</span>
+    </div>
+    <div class="term-body">
+      <span class="t-muted">$</span> <span class="t-white">./webserver -p 8080 -t 4 -r ./www</span><br>
+      <span class="t-muted">──────────────────────────────────────</span><br>
+      <span class="t-cyan">[INFO]</span> ThreadPool: started 4 worker threads<br>
+      <span class="t-cyan">[INFO]</span> Listening on 0.0.0.0:8080<br>
+      <span class="t-cyan">[INFO]</span> Server started — open http://localhost:8080/<br>
+      <span class="t-green">[INFO]</span> GET /index.html<br>
+      <span class="t-green">[INFO]</span> GET /style.css<br>
+      <span class="t-purple">[DEBUG]</span> Cache HIT: ./www/style.css<br>
+      <span class="t-muted">^C</span><br>
+      <span class="t-cyan">[INFO]</span> Caught signal 2 — initiating graceful shutdown …<br>
+      <span class="t-cyan">[INFO]</span> Stopping accept loop …<br>
+      <span class="t-cyan">[INFO]</span> ThreadPool: all worker threads joined<br>
+      <span class="t-green">[INFO]</span> Server stopped cleanly.<span class="t-green" style="animation:pulse 1s infinite;display:inline-block">█</span>
+    </div>
+  </div>
+
+  <div class="phases">
+    <div class="phase"><div class="phase-num">1</div><div><h4>Phase 1 — Foundations</h4><p>POSIX socket setup, echo server, HTTP/1.1 parsing, static file serving.</p></div></div>
+    <div class="phase"><div class="phase-num">2</div><div><h4>Phase 2 — Naive Concurrency</h4><p>Thread-per-connection model to demonstrate why unlimited threads are expensive.</p></div></div>
+    <div class="phase"><div class="phase-num">3</div><div><h4>Phase 3 — Thread Pool</h4><p>Fixed worker pool with task queue, mutex, and condition_variable for sleep/wake.</p></div></div>
+    <div class="phase"><div class="phase-num">4</div><div><h4>Phase 4 — Robustness</h4><p>SIGINT/SIGTERM graceful shutdown, RAII socket guard, 400/403/404/500 error pages.</p></div></div>
+    <div class="phase"><div class="phase-num">5</div><div><h4>Phase 5 — Resume Gold</h4><p>Thread-safe LRU file cache with 32MB capacity, path traversal defence, recv/send timeouts.</p></div></div>
+  </div>
+
+  <footer>Built with raw sys/socket.h · No Boost · No Libevent · Pure C++17</footer>
+</div>
+</body>
+</html>
